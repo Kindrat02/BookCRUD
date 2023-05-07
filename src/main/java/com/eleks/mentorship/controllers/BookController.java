@@ -60,4 +60,8 @@ public class BookController {
     public ResponseEntity deleteBook(@Min(1) @PathVariable(name = "id") Integer bookId) {
         return new ResponseEntity(bookService.deleteBook(bookId) ? HttpStatus.OK : HttpStatus.GONE);
     }
+
+
+    // Swagger Links: http://localhost:8090/api/swagger-ui/index.html#/
+    //                http://localhost:8090/api/v3/api-docs
 }
