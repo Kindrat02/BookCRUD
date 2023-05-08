@@ -1,6 +1,9 @@
 package com.eleks.mentorship.services.implementations;
 
+import com.eleks.mentorship.dtos.BookDTO;
 import com.eleks.mentorship.entities.Book;
+import com.eleks.mentorship.mappers.BookMapper;
+import com.eleks.mentorship.mappers.BookMapperImpl;
 import com.eleks.mentorship.repositories.BookRepository;
 import com.eleks.mentorship.services.BookService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,12 +27,15 @@ class BookServiceImplTest {
     @Mock
     private BookRepository bookRepository;
     private BookService bookService;
-    private Book book;
+    private final BookMapper bookMapper = new BookMapperImpl();
+    private BookDTO bookDTO;
+    private Book bookEntity;
 
     @BeforeEach
     public void setup() {
-        book = new Book(1, "Title", "Author", "fiction", 2023);
-        bookService = new BookServiceImpl(bookRepository);
+        bookDTO = new BookDTO(1, "Title", "Author", "fiction", 2023);
+        bookEntity = bookMapper.toModel(bookDTO);
+        bookService = new BookServiceImpl(bookRepository, bookMapper);
     }
 
     @Test
@@ -37,7 +43,7 @@ class BookServiceImplTest {
         Pageable wholePage = Pageable.unpaged();
         when(bookRepository.findAll(wholePage)).thenReturn(Page.empty());
 
-        List<Book> result = bookService.getAllBooks(wholePage);
+        List<BookDTO> result = bookService.getAllBooks(wholePage);
 
         verify(bookRepository).findAll(wholePage);
         assertEquals(0, result.size());
@@ -45,10 +51,10 @@ class BookServiceImplTest {
 
     @Test
     void getBookById_shouldReturnNotEmptyOptional() {
-        Integer id = book.getId();
-        when(bookRepository.findById(anyInt())).thenReturn(Optional.of(book));
+        Integer id = bookDTO.getId();
+        when(bookRepository.findById(anyInt())).thenReturn(Optional.of(bookEntity));
 
-        Optional<Book> result = bookService.getBookById(id);
+        Optional<BookDTO> result = bookService.getBookById(id);
 
         verify(bookRepository).findById(id);
         assertTrue(result.isPresent());
@@ -56,19 +62,19 @@ class BookServiceImplTest {
     }
 
     @Test
-    void saveBook_shouldreturnSavedObject() {
-        when(bookRepository.save(any(Book.class))).thenReturn(book);
+    void saveBook_shouldReturnSavedObject() {
+        when(bookRepository.save(any(Book.class))).thenReturn(bookEntity);
 
-        Book result = bookService.saveBook(book);
+        BookDTO result = bookService.saveBook(bookDTO);
 
-        verify(bookRepository).save(book);
+        verify(bookRepository).save(any(Book.class));
         assertEquals("Title", result.getTitle());
     }
 
     @Test
     void updateBook_shouldReturnUpdatedObject() {
-        Book newBook = new Book(1, "New Title", "Author", "fiction", 2022);
-        when(bookRepository.findById(anyInt())).thenReturn(Optional.of(book));
+        BookDTO newBook = new BookDTO(1, "New Title", "Author", "fiction", 2022);
+        when(bookRepository.findById(anyInt())).thenReturn(Optional.of(bookEntity));
 
         bookService.updateBook(newBook);
 
@@ -83,7 +89,7 @@ class BookServiceImplTest {
     void deleteBook_shouldReturnFalse() {
         when(bookRepository.existsById(anyInt())).thenReturn(false);
 
-        boolean result = bookService.deleteBook(book.getId());
+        boolean result = bookService.deleteBook(bookDTO.getId());
 
         verify(bookRepository).existsById(1);
         verify(bookRepository, never()).deleteById(1);
@@ -94,7 +100,7 @@ class BookServiceImplTest {
     void deleteBook_shouldReturnTrue() {
         when(bookRepository.existsById(anyInt())).thenReturn(true);
 
-        boolean result = bookService.deleteBook(book.getId());
+        boolean result = bookService.deleteBook(bookDTO.getId());
 
         verify(bookRepository).existsById(1);
         verify(bookRepository).deleteById(1);
