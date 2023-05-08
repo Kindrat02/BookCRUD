@@ -1,6 +1,8 @@
 package com.eleks.mentorship.services.implementations;
 
+import com.eleks.mentorship.dtos.BookDTO;
 import com.eleks.mentorship.entities.Book;
+import com.eleks.mentorship.mappers.BookMapper;
 import com.eleks.mentorship.repositories.BookRepository;
 import com.eleks.mentorship.services.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,29 +15,32 @@ import java.util.Optional;
 @Service
 public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
+    private final BookMapper bookMapper;
 
     @Autowired
-    public BookServiceImpl(BookRepository bookRepository) {
+    public BookServiceImpl(BookRepository bookRepository, BookMapper bookMapper) {
         this.bookRepository = bookRepository;
+        this.bookMapper = bookMapper;
     }
 
     @Override
-    public List<Book> getAllBooks(Pageable pageable) {
-        return bookRepository.findAll(pageable).stream().toList();
+    public List<BookDTO> getAllBooks(Pageable pageable) {
+        return bookRepository.findAll(pageable).stream().map(bookMapper::toDTO).toList();
     }
 
     @Override
-    public Optional<Book> getBookById(Integer id) {
-        return bookRepository.findById(id);
+    public Optional<BookDTO> getBookById(Integer id) {
+        return bookRepository.findById(id).map(bookMapper::toDTO);
     }
 
     @Override
-    public Book saveBook(Book book) {
-        return bookRepository.save(book);
+    public BookDTO saveBook(BookDTO book) {
+        Book savedBook = bookRepository.save(bookMapper.toModel(book));
+        return bookMapper.toDTO(savedBook);
     }
 
     @Override
-    public Optional<Book> updateBook(Book book) {
+    public Optional<BookDTO> updateBook(BookDTO book) {
         return bookRepository
                 .findById(book.getId())
                 .map(b -> {
@@ -44,7 +49,8 @@ public class BookServiceImpl implements BookService {
                     b.setPublishYear(book.getPublishYear());
                     b.setGenre(book.getGenre());
 
-                    return bookRepository.save(b);
+                    Book savedBook = bookRepository.save(b);
+                    return bookMapper.toDTO(savedBook);
         });
     }
 
